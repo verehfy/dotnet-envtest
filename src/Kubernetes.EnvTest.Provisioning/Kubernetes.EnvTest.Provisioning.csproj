@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Kubernetes.EnvTest.Provisioning</RootNamespace>
+    <Description>Provisioning of Kubernetes envtest control-plane binaries (kube-apiserver, etcd, kubectl): version resolution against envtest-releases.yaml, download with SHA-512 verification, and a setup-envtest-compatible on-disk store. Used by Kubernetes.EnvTest and the setup-envtest dotnet tool.</Description>
+    <PackageTags>kubernetes;envtest;testing;setup-envtest;controller-runtime</PackageTags>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kubernetes.EnvTest.Tests" />
+  </ItemGroup>
+
+</Project>

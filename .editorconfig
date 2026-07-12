@@ -1,0 +1,206 @@
+# Microsoft C# coding conventions, enforced in build (EnforceCodeStyleInBuild)
+# and in CI via `dotnet format --verify-no-changes`.
+#
+# Where Microsoft guidelines and default ReSharper rules conflict, Microsoft
+# wins (per the project coding standards). Known conflicts are annotated with
+# "ReSharper conflict:" comments on the affected rules.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.{props,targets,csproj,slnx}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+[*.ps1]
+indent_size = 4
+
+[*.cs]
+indent_size = 4
+
+# New line preferences (Allman braces per Microsoft; ReSharper default agrees)
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+# Spacing
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+
+# 'var' preferences.
+# ReSharper conflict: ReSharper defaults to suggesting 'var' everywhere;
+# Microsoft convention is 'var' only when the type is apparent.
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_operators = when_on_single_line:silent
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+
+# Null-checking preferences
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Modifier preferences
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+csharp_preferred_modifier_order = public,private,protected,internal,file,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,required,volatile,async:suggestion
+dotnet_style_readonly_field = true:warning
+
+# Code-block preferences.
+# ReSharper conflict: ReSharper default allows omitting braces for single
+# statements; Microsoft prefers braces always.
+csharp_prefer_braces = true:warning
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Expression-level preferences
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+csharp_style_prefer_primary_constructors = false:silent
+
+# 'this.' qualification.
+# ReSharper conflict: none in practice (both default to no 'this.'), noted
+# because StyleCop's SA1101 would require 'this.'; Microsoft convention omits it.
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Language keywords vs BCL types
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+
+# Parentheses preferences
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:silent
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:silent
+
+# Using directives
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Naming conventions (Microsoft defaults)
+dotnet_naming_rule.interfaces_begin_with_i.severity = warning
+dotnet_naming_rule.interfaces_begin_with_i.symbols = interface_symbols
+dotnet_naming_rule.interfaces_begin_with_i.style = prefix_i_style
+
+dotnet_naming_rule.types_pascal_case.severity = warning
+dotnet_naming_rule.types_pascal_case.symbols = type_symbols
+dotnet_naming_rule.types_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.non_field_members_pascal_case.severity = warning
+dotnet_naming_rule.non_field_members_pascal_case.symbols = non_field_member_symbols
+dotnet_naming_rule.non_field_members_pascal_case.style = pascal_case_style
+
+# Private static fields (incl. static readonly) use PascalCase, matching the
+# .NET runtime convention; this rule must precede the instance-field rule.
+dotnet_naming_rule.private_static_fields_pascal_case.severity = warning
+dotnet_naming_rule.private_static_fields_pascal_case.symbols = private_static_field_symbols
+dotnet_naming_rule.private_static_fields_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.private_fields_camel_case_underscore.severity = warning
+dotnet_naming_rule.private_fields_camel_case_underscore.symbols = private_field_symbols
+dotnet_naming_rule.private_fields_camel_case_underscore.style = underscore_camel_case_style
+
+dotnet_naming_rule.constants_pascal_case.severity = warning
+dotnet_naming_rule.constants_pascal_case.symbols = constant_symbols
+dotnet_naming_rule.constants_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+
+dotnet_naming_symbols.type_symbols.applicable_kinds = class, struct, interface, enum, delegate
+dotnet_naming_symbols.type_symbols.applicable_accessibilities = *
+
+dotnet_naming_symbols.non_field_member_symbols.applicable_kinds = property, method, event
+dotnet_naming_symbols.non_field_member_symbols.applicable_accessibilities = *
+
+dotnet_naming_symbols.private_static_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_static_field_symbols.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_field_symbols.required_modifiers = static
+
+dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private
+
+dotnet_naming_symbols.constant_symbols.applicable_kinds = field
+dotnet_naming_symbols.constant_symbols.applicable_accessibilities = *
+dotnet_naming_symbols.constant_symbols.required_modifiers = const
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+dotnet_naming_style.prefix_i_style.capitalization = pascal_case
+dotnet_naming_style.prefix_i_style.required_prefix = I
+
+# ReSharper conflict: ReSharper's default for private instance fields is
+# lowerCamelCase without a prefix; Microsoft's runtime/design guidance and the
+# default .NET templates use _lowerCamelCase. Microsoft wins.
+dotnet_naming_style.underscore_camel_case_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case_style.required_prefix = _
+
+# Analyzer tuning
+# CA1848 (LoggerMessage delegates): valuable for hot paths, but this library
+# logs only on control-plane lifecycle transitions (a handful of times per test
+# run); the ceremony is not worth it here.
+dotnet_diagnostic.CA1848.severity = none
+# CA2007 (ConfigureAwait): this is a library; ConfigureAwait(false) is enforced.
+dotnet_diagnostic.CA2007.severity = warning
+
+[test/**.cs]
+dotnet_diagnostic.CA2007.severity = none
+# xUnit test naming uses underscores for readability.
+dotnet_diagnostic.CA1707.severity = none
+# BenchmarkDotNet requires instance benchmark methods; xUnit facts are also
+# conventionally instance methods.
+dotnet_diagnostic.CA1822.severity = none
