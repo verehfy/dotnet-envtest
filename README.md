@@ -197,5 +197,7 @@ actual hash), `PlatformBinariesNotFoundException` (version + OS + arch),
 
 ## License
 
-[MIT](LICENSE). Not affiliated with the Kubernetes project; `envtest` and the control-plane
-binaries are governed by their own upstream licenses.
+[Apache-2.0](LICENSE), the same license as the upstream
+[controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) project this
+library ports. Not affiliated with the Kubernetes project; the control-plane binaries are
+governed by their own upstream licenses.

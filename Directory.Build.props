@@ -18,7 +18,7 @@
     <Authors>verehfy</Authors>
     <Company>verehfy</Company>
     <Copyright>Copyright (c) verehfy</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/verehfy/dotnet-envtest</RepositoryUrl>
     <PackageProjectUrl>https://github.com/verehfy/dotnet-envtest</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
