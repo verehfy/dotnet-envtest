@@ -99,6 +99,33 @@ public class BinaryProvisionerTests : IDisposable
     }
 
     [Fact]
+    public async Task Concurrent_provisioners_share_one_download()
+    {
+        byte[] archive = BuildArchive();
+        const string archiveUrl = "https://downloads.test/envtest-v1.31.0-linux-amd64.tar.gz";
+        var handler = new FakeHttpMessageHandler(new Dictionary<string, byte[]>
+        {
+            ["https://index.test/envtest-releases.yaml"] = System.Text.Encoding.UTF8.GetBytes(BuildIndexYaml(archive)),
+            [archiveUrl] = archive,
+        });
+
+        // Regression: parallel test classes provisioning the same version used
+        // to collide on a shared temp file and delete each other's download.
+        Task<EnvTestBinaries>[] tasks = [.. Enumerable.Range(0, 4)
+            .Select(_ => CreateProvisioner(handler, version: "1.31.0")
+                .EnsureBinariesAsync(TestContext.Current.CancellationToken))];
+        EnvTestBinaries[] results = await Task.WhenAll(tasks);
+
+        Assert.All(results, binaries =>
+        {
+            Assert.True(File.Exists(binaries.ApiServerPath));
+            Assert.True(File.Exists(binaries.EtcdPath));
+            Assert.True(File.Exists(binaries.KubectlPath));
+        });
+        Assert.Equal(1, handler.CountFor(archiveUrl));
+    }
+
+    [Fact]
     public async Task Missing_platform_archive_raises_platform_exception()
     {
         byte[] archive = BuildArchive();
@@ -181,6 +208,8 @@ public class BinaryProvisionerTests : IDisposable
 internal sealed class FakeHttpMessageHandler : HttpMessageHandler
 {
     private readonly Dictionary<string, byte[]> _responses;
+    private readonly Lock _countsLock = new();
+    private readonly Dictionary<string, int> _requestCounts = [];
 
     internal FakeHttpMessageHandler(Dictionary<string, byte[]> responses)
     {
@@ -189,10 +218,24 @@ internal sealed class FakeHttpMessageHandler : HttpMessageHandler
 
     internal int RequestCount { get; private set; }
 
+    internal int CountFor(string url)
+    {
+        lock (_countsLock)
+        {
+            return _requestCounts.GetValueOrDefault(url);
+        }
+    }
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        RequestCount++;
-        if (request.RequestUri is not null && _responses.TryGetValue(request.RequestUri.AbsoluteUri, out byte[]? body))
+        string url = request.RequestUri?.AbsoluteUri ?? string.Empty;
+        lock (_countsLock)
+        {
+            RequestCount++;
+            _requestCounts[url] = _requestCounts.GetValueOrDefault(url) + 1;
+        }
+
+        if (_responses.TryGetValue(url, out byte[]? body))
         {
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {

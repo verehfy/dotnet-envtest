@@ -18,6 +18,7 @@ namespace Kubernetes.EnvTest.Provisioning;
 public sealed partial class BinaryProvisioner : IBinaryProvisioner
 {
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
+    private static readonly TimeSpan LockRetryDelay = TimeSpan.FromMilliseconds(250);
 
     private readonly BinaryProvisionerOptions _options;
     private readonly HttpClient _httpClient;
@@ -85,7 +86,21 @@ public sealed partial class BinaryProvisioner : IBinaryProvisioner
         ReleaseArchive archive = index.GetArchive(version, platform, _options.IndexUrl);
 
         string directory = BinaryStore.GetVersionDirectory(storeRoot, version, platform);
-        await DownloadAndExtractAsync(archive, directory, platform, cancellationToken).ConfigureAwait(false);
+        Directory.CreateDirectory(directory);
+        using (await AcquireStoreLockAsync(directory, cancellationToken).ConfigureAwait(false))
+        {
+            // Another provisioner (a parallel test class or another process
+            // sharing the store) may have populated the directory while we
+            // waited for the lock.
+            cached = BinaryStore.TryGetBinaries(storeRoot, version, platform);
+            if (cached is not null)
+            {
+                LogUsingCachedBinaries(version, platform, cached.Directory);
+                return cached;
+            }
+
+            await DownloadAndExtractAsync(archive, directory, platform, cancellationToken).ConfigureAwait(false);
+        }
 
         EnvTestBinaries binaries = BinaryStore.TryGetBinaries(storeRoot, version, platform)
             ?? throw new BinaryDownloadException(
@@ -157,6 +172,38 @@ public sealed partial class BinaryProvisioner : IBinaryProvisioner
     private static long GetElapsedMilliseconds(long startTimestamp) =>
         (long)Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
+    /// <summary>
+    /// Serializes download-and-extract for one version directory across
+    /// provisioner instances and processes by holding an exclusive handle on a
+    /// lock file inside the directory (<see cref="FileShare.None"/> is enforced
+    /// cross-process on Windows and via file locking on Unix).
+    /// </summary>
+    private async Task<FileStream> AcquireStoreLockAsync(string directory, CancellationToken cancellationToken)
+    {
+        string lockPath = Path.Combine(directory, ".provision.lock");
+        bool waiting = false;
+        while (true)
+        {
+            try
+            {
+                // The lock file is intentionally never deleted: unlinking a
+                // held lock file would let two waiters lock different inodes
+                // of the same path and both proceed.
+                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, bufferSize: 1);
+            }
+            catch (IOException ex) when (ex is not DirectoryNotFoundException and not PathTooLongException)
+            {
+                if (!waiting)
+                {
+                    waiting = true;
+                    LogWaitingForStoreLock(lockPath);
+                }
+
+                await Task.Delay(LockRetryDelay, cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
     private async Task DownloadAndExtractAsync(
         ReleaseArchive archive,
         string directory,
@@ -167,7 +214,10 @@ public sealed partial class BinaryProvisioner : IBinaryProvisioner
 
         // Download to a temporary file first so a half-written archive can
         // never corrupt the store, verifying the SHA-512 hash as we stream.
-        string tempArchivePath = Path.Combine(directory, $".{archive.Name}.{System.Environment.ProcessId}.tmp");
+        // The name must be unique per call, not per process: concurrent
+        // provisioners in one process would otherwise share a path and delete
+        // each other's in-progress download in the finally block.
+        string tempArchivePath = Path.Combine(directory, $".{archive.Name}.{Guid.NewGuid():N}.tmp");
         long startTimestamp = Stopwatch.GetTimestamp();
         try
         {
@@ -317,4 +367,7 @@ public sealed partial class BinaryProvisioner : IBinaryProvisioner
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping {FileName}: created concurrently by another process")]
     private partial void LogSkippedConcurrentFile(string fileName);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Waiting for another provisioner holding {LockPath} to finish")]
+    private partial void LogWaitingForStoreLock(string lockPath);
 }
