@@ -1,0 +1,45 @@
+name: Reusable Build & Test
+
+# Shared build/test job called from pr.yml, release.yml, and
+# publish-preview.yml so the steps aren't duplicated across all three.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ""
+        description: Commit SHA or ref to check out; empty uses the caller's default ref.
+      run-format-check:
+        type: boolean
+        default: false
+      run-integration-tests:
+        type: boolean
+        default: false
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: ./.github/actions/dotnet-setup
+
+      - name: Restore
+        run: dotnet restore Kubernetes.EnvTest.slnx
+
+      - name: Verify code style (dotnet format)
+        if: inputs.run-format-check
+        run: dotnet format Kubernetes.EnvTest.slnx --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build Kubernetes.EnvTest.slnx -c Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test test/Kubernetes.EnvTest.Tests/Kubernetes.EnvTest.Tests.csproj -c Release --no-build
+
+      - name: Integration tests (Aspire AppHost + real control plane)
+        if: inputs.run-integration-tests
+        run: dotnet test test/Kubernetes.EnvTest.IntegrationTests/Kubernetes.EnvTest.IntegrationTests.csproj -c Release --no-build

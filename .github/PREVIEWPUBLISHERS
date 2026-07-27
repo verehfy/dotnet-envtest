@@ -1,0 +1,9 @@
+# GitHub usernames allowed to trigger a /publish-preview comment build
+# (see .github/workflows/publish-preview.yml). One login per line, no
+# leading @. Lines starting with # and blank lines are ignored.
+#
+# This file is read from the trusted default branch BEFORE any PR code
+# is checked out — never from the PR branch itself — so a PR cannot add
+# its own author to this list to authorize itself.
+
+verehfy

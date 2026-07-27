@@ -18,11 +18,8 @@
          manifest, and each RID package is packed on a matching runner in the
          release workflow (Native AOT cannot reliably cross-compile).
          IMPORTANT: keep this list in sync with the active matrix entries in
-         .github/workflows/release.yml. The full set is
-         win-x64;win-arm64;osx-x64;osx-arm64;linux-x64;linux-arm64 — enable the
-         Windows/macOS entries here and in the workflow together, otherwise the
-         manifest would reference RID packages that were never published. -->
-    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+         .github/workflows/release.yml. -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
     <!-- Surface trim/AOT warnings from dependencies at publish time in CI. -->
     <TrimmerSingleWarn>false</TrimmerSingleWarn>

@@ -1,0 +1,20 @@
+name: Pack libraries
+description: Packs Kubernetes.EnvTest.Provisioning and Kubernetes.EnvTest into .nupkg files at the given version.
+inputs:
+  version:
+    description: NuGet package version to stamp on both packages.
+    required: true
+  output-dir:
+    description: Output directory for the packed .nupkg files.
+    required: false
+    default: artifacts
+runs:
+  using: composite
+  steps:
+    - name: Pack Kubernetes.EnvTest.Provisioning
+      shell: bash
+      run: dotnet pack src/Kubernetes.EnvTest.Provisioning -c Release -o "${{ inputs.output-dir }}" "-p:Version=${{ inputs.version }}"
+
+    - name: Pack Kubernetes.EnvTest
+      shell: bash
+      run: dotnet pack src/Kubernetes.EnvTest -c Release -o "${{ inputs.output-dir }}" "-p:Version=${{ inputs.version }}"

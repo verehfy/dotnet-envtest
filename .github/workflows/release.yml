@@ -32,14 +32,7 @@ jobs:
   test:
     name: Build & test
     needs: validate-tag
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-      - run: dotnet build Kubernetes.EnvTest.slnx -c Release
-      - run: dotnet test test/Kubernetes.EnvTest.Tests/Kubernetes.EnvTest.Tests.csproj -c Release --no-build
+    uses: ./.github/workflows/build-test.yml
 
   pack-libraries:
     name: Pack libraries + tool manifest
@@ -49,15 +42,12 @@ jobs:
       VERSION: ${{ needs.validate-tag.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: ./.github/actions/dotnet-setup
+
+      - name: Pack libraries
+        uses: ./.github/actions/pack-libraries
         with:
-          global-json-file: global.json
-
-      - name: Pack Kubernetes.EnvTest.Provisioning
-        run: dotnet pack src/Kubernetes.EnvTest.Provisioning -c Release -o artifacts "-p:Version=$VERSION"
-
-      - name: Pack Kubernetes.EnvTest
-        run: dotnet pack src/Kubernetes.EnvTest -c Release -o artifacts "-p:Version=$VERSION"
+          version: ${{ env.VERSION }}
 
       - name: Pack Kubernetes.EnvTest.Tool manifest package
         # Packing without a RuntimeIdentifier produces the top-level tool
@@ -80,32 +70,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # All six target RIDs are defined here, but only the Linux entries are
-        # active initially. To ship Windows/macOS tool packages: uncomment the
-        # matrix entries below AND add the same RIDs to <RuntimeIdentifiers>
-        # in src/Kubernetes.EnvTest.Tool/Kubernetes.EnvTest.Tool.csproj so the
-        # manifest package references them. Native AOT cannot reliably be
-        # cross-compiled, hence one runner per RID.
+        # One runner per RID — Native AOT cannot reliably be cross-compiled.
+        # Keep this list in sync with <RuntimeIdentifiers> in
+        # src/Kubernetes.EnvTest.Tool/Kubernetes.EnvTest.Tool.csproj.
         include:
           - rid: linux-x64
             os: ubuntu-latest
           - rid: linux-arm64
             os: ubuntu-24.04-arm
-          # - rid: win-x64
-          #   os: windows-latest
-          # - rid: win-arm64
-          #   os: windows-11-arm
-          # - rid: osx-x64
-          #   os: macos-13
-          # - rid: osx-arm64
-          #   os: macos-latest
+          - rid: win-x64
+            os: windows-latest
+          - rid: win-arm64
+            os: windows-11-arm
+          - rid: osx-x64
+            os: macos-15-intel
+          - rid: osx-arm64
+            os: macos-latest
     env:
       VERSION: ${{ needs.validate-tag.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
+      - uses: ./.github/actions/dotnet-setup
 
       - name: Pack Native AOT tool package
         run: dotnet pack src/Kubernetes.EnvTest.Tool -c Release -r ${{ matrix.rid }} -o artifacts "-p:Version=${{ env.VERSION }}"
