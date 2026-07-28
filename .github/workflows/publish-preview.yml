@@ -47,7 +47,7 @@ jobs:
             -f content=eyes --silent
 
       - name: Checkout (required to resolve local composite actions)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify commenter is authorized
         id: verify
@@ -108,7 +108,7 @@ jobs:
     needs: [authorize, build-test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.authorize.outputs.sha }}
           # Full history so existing release tags are visible below.
