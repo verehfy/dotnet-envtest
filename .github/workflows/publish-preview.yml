@@ -13,6 +13,11 @@ name: Publish PR Preview to GitHub Packages
 # the allow-list) would let anyone run arbitrary code in this job using its
 # GITHUB_TOKEN. A secret (rather than a committed file) also keeps the list
 # of authorized logins off a public repo and restricts edits to repo admins.
+#
+# Feedback: the trigger comment gets an eyes reaction immediately, and a PR
+# comment is posted for every terminal outcome (not authorized, build/test
+# failure, pack/publish failure, or success) so progress is visible without
+# checking the Actions tab.
 on:
   issue_comment:
     types: [created]
@@ -21,6 +26,7 @@ permissions:
   contents: read
   packages: write
   pull-requests: write
+  issues: write # reactions on the triggering comment use the issue-comments API
 
 jobs:
   authorize:
@@ -33,14 +39,30 @@ jobs:
       ref: ${{ steps.pr.outputs.ref }}
       sha: ${{ steps.pr.outputs.sha }}
     steps:
+      - name: Acknowledge command
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=eyes --silent
+
       - name: Checkout (required to resolve local composite actions)
         uses: actions/checkout@v4
 
       - name: Verify commenter is authorized
+        id: verify
         uses: ./.github/actions/verify-chatops-authorization
         with:
           commenter: ${{ github.event.comment.user.login }}
           authorized-users: ${{ secrets.CHATOPS_AUTHORIZED_USERS }}
+
+      - name: Comment if not authorized
+        if: ${{ failure() && steps.verify.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" \
+            --body "❌ @${{ github.event.comment.user.login }} is not authorized to run \`/publish-preview\`. Ask a maintainer to add you to the \`CHATOPS_AUTHORIZED_USERS\` secret."
 
       - name: Resolve PR head branch and commit
         id: pr
@@ -51,12 +73,35 @@ jobs:
           echo "ref=$(jq -r .headRefName <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
           echo "sha=$(jq -r .headRefOid <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
 
+      - name: Comment if PR resolution failed
+        if: ${{ failure() && steps.verify.outcome != 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" \
+            --body "❌ \`/publish-preview\` failed before build/test started. See the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+
   build-test:
     name: Build & test PR branch
     needs: authorize
     uses: ./.github/workflows/build-test.yml
     with:
       ref: ${{ needs.authorize.outputs.sha }}
+
+  notify-build-failure:
+    name: Comment build/test failure
+    needs: [authorize, build-test]
+    if: always() && needs.authorize.result == 'success' && needs.build-test.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" \
+            --body "❌ Build/test failed for \`/publish-preview\`. See the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
 
   publish-preview:
     name: Pack & push preview package
@@ -120,4 +165,12 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           gh pr comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" \
-            --body "Published preview package \`$VERSION\` to GitHub Packages."
+            --body "✅ Published preview package \`$VERSION\` to GitHub Packages."
+
+      - name: Comment failure on PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" \
+            --body "❌ Packing/publishing the preview package failed. See the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."

@@ -103,3 +103,6 @@ works.
   on branch `feature/foo_bar`, publishes `0.4.0-feature-foo-bar`).
 - Re-running `/publish-preview` on the same PR without a new release tag computes the same
   version; NuGet push uses `--skip-duplicate`, so it republishes only if the version changed.
+- Progress is reported back on the PR: an eyes reaction on the triggering comment confirms it
+  was picked up, and a comment is posted for the outcome (not authorized, build/test failure,
+  pack/publish failure, or success with the published version).
