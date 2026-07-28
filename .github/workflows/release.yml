@@ -41,7 +41,7 @@ jobs:
     env:
       VERSION: ${{ needs.validate-tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/dotnet-setup
 
       - name: Pack libraries
@@ -59,7 +59,7 @@ jobs:
           mkdir -p artifacts
           cp "tool-manifest/Kubernetes.EnvTest.Tool.$VERSION.nupkg" artifacts/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-libraries
           path: artifacts/*.nupkg
@@ -89,13 +89,13 @@ jobs:
     env:
       VERSION: ${{ needs.validate-tag.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/dotnet-setup
 
       - name: Pack Native AOT tool package
         run: dotnet pack src/Kubernetes.EnvTest.Tool -c Release -r ${{ matrix.rid }} -o artifacts "-p:Version=${{ env.VERSION }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-tool-${{ matrix.rid }}
           path: artifacts/*.nupkg
@@ -107,11 +107,11 @@ jobs:
     env:
       VERSION: ${{ needs.validate-tag.outputs.version }}
     steps:
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: packages-*
           merge-multiple: true
