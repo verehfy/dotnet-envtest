@@ -34,7 +34,7 @@ make format             # apply code style; `make format-check` is what CI runs
 make pack               # produce the NuGet packages locally (current RID only)
 ```
 
-On Windows, use `./scripts/make.ps1 <target>` with the same target names.
+On Windows, use `./make.ps1 <target>` with the same target names.
 
 Unit tests must stay hermetic (no network, no real binaries). Anything that starts a real
 control plane belongs in the integration test project. Prefer integration coverage for
@@ -78,7 +78,28 @@ The library mirrors `controller-runtime/pkg/envtest` behaviorally. When upstream
 Releases are cut by pushing a SemVer tag: `vX.Y.Z`, optionally with `-prerelease` and/or
 `+metadata` (e.g. `v0.2.0-rc.1`). The release workflow validates the tag, packs
 `Kubernetes.EnvTest`, `Kubernetes.EnvTest.Provisioning`, the tool manifest package, and one
-Native AOT tool package per active RID, then pushes everything to NuGet and creates a GitHub
-release. Only the Linux RIDs are active initially — the Windows/macOS matrix entries are
-present but commented out in `.github/workflows/release.yml`; enable them together with the
-matching `<RuntimeIdentifiers>` entries in `Kubernetes.EnvTest.Tool.csproj`.
+Native AOT tool package per RID (`linux-x64`, `linux-arm64`, `win-x64`, `win-arm64`, `osx-x64`,
+`osx-arm64` — kept in sync with `<RuntimeIdentifiers>` in `Kubernetes.EnvTest.Tool.csproj`), then
+pushes everything to NuGet and creates a GitHub release.
+
+## Chat-ops commands
+
+Certain workflows can be triggered by commenting on a PR. The commenter must be listed in the
+`CHATOPS_AUTHORIZED_USERS` repo secret (comma-separated GitHub logins) — checked before any PR
+code is built. Add or remove maintainers with
+`gh secret set CHATOPS_AUTHORIZED_USERS --body "<comma-separated logins>"`.
+
+| Command            | What it does                                                                                               | Workflow                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `/publish-preview` | Builds, tests, and publishes the PR branch as a preview NuGet package to this repo's GitHub Packages feed. | `.github/workflows/publish-preview.yml` |
+
+### `/publish-preview`
+
+See [Chat-ops commands](#chat-ops-commands) above for who can run this and how authorization
+works.
+
+- The PR branch is built, unit-tested, packed, and pushed with a version of
+  `<next-minor>.0-<branch-name-kebab-cased>` (e.g. a PR against a repo currently at `v0.3.1`,
+  on branch `feature/foo_bar`, publishes `0.4.0-feature-foo-bar`).
+- Re-running `/publish-preview` on the same PR without a new release tag computes the same
+  version; NuGet push uses `--skip-duplicate`, so it republishes only if the version changed.

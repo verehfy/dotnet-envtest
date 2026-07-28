@@ -1,0 +1,40 @@
+name: Verify chatops authorization
+description: >
+  Fails the job unless the given commenter's login is in the authorized-users
+  list. Shared gate for any issue_comment-triggered (chat-ops) workflow in
+  this repo.
+inputs:
+  commenter:
+    description: GitHub login of the user who triggered the chat-ops command.
+    required: true
+  authorized-users:
+    description: >
+      Comma- or newline-separated list of authorized GitHub logins. Pass this
+      from a repo secret (not a file) so the list isn't publicly visible on a
+      public repo and can only be edited by repo admins.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check commenter against authorized-users list
+      shell: bash
+      env:
+        COMMENTER: ${{ inputs.commenter }}
+        AUTHORIZED_USERS: ${{ inputs.authorized-users }}
+      run: |
+        COMMENTER_LOWER=$(tr '[:upper:]' '[:lower:]' <<<"$COMMENTER")
+        AUTHORIZED=false
+
+        while IFS= read -r entry; do
+          entry="$(tr -d '[:space:]' <<<"$entry")"
+          [[ -z "$entry" ]] && continue
+          if [[ "$(tr '[:upper:]' '[:lower:]' <<<"$entry")" == "$COMMENTER_LOWER" ]]; then
+            AUTHORIZED=true
+            break
+          fi
+        done < <(tr ',' '\n' <<<"$AUTHORIZED_USERS")
+
+        if [[ "$AUTHORIZED" != true ]]; then
+          echo "::error::@$COMMENTER is not authorized to trigger this chat-ops action."
+          exit 1
+        fi

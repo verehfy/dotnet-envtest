@@ -4,13 +4,15 @@ name: Publish PR Preview to GitHub Packages
 # publish that PR branch's current code as a preview NuGet package to this
 # repo's GitHub Packages feed, for manual testing before a real release.
 #
-# Restricted to the logins listed in .github/PREVIEWPUBLISHERS, checked
-# against a checkout of the trusted default branch BEFORE any PR code is
+# Restricted to the logins listed in the CHATOPS_AUTHORIZED_USERS secret
+# (shared across any chat-ops workflow in this repo, not just this one) via
+# the verify-chatops-authorization action, checked BEFORE any PR code is
 # touched. issue_comment fires for every commenter on a public repo, and
 # dotnet build/pack executes arbitrary MSBuild targets from the checked-out
 # code, so an unrestricted trigger (or one that trusted the PR's own copy of
 # the allow-list) would let anyone run arbitrary code in this job using its
-# GITHUB_TOKEN.
+# GITHUB_TOKEN. A secret (rather than a committed file) also keeps the list
+# of authorized logins off a public repo and restricts edits to repo admins.
 on:
   issue_comment:
     types: [created]
@@ -31,30 +33,14 @@ jobs:
       ref: ${{ steps.pr.outputs.ref }}
       sha: ${{ steps.pr.outputs.sha }}
     steps:
-      - name: Checkout trusted default branch
+      - name: Checkout (required to resolve local composite actions)
         uses: actions/checkout@v4
 
-      - name: Verify commenter is an authorized preview publisher
-        env:
-          COMMENTER: ${{ github.event.comment.user.login }}
-        run: |
-          FILE=".github/PREVIEWPUBLISHERS"
-          COMMENTER_LOWER=$(tr '[:upper:]' '[:lower:]' <<<"$COMMENTER")
-          AUTHORIZED=false
-
-          while IFS= read -r line || [[ -n "$line" ]]; do
-            entry="$(sed -E 's/#.*//; s/^[[:space:]]+//; s/[[:space:]]+$//' <<<"$line")"
-            [[ -z "$entry" ]] && continue
-            if [[ "$(tr '[:upper:]' '[:lower:]' <<<"$entry")" == "$COMMENTER_LOWER" ]]; then
-              AUTHORIZED=true
-              break
-            fi
-          done < "$FILE"
-
-          if [[ "$AUTHORIZED" != true ]]; then
-            echo "::error::@$COMMENTER is not listed in $FILE and cannot trigger preview publishes."
-            exit 1
-          fi
+      - name: Verify commenter is authorized
+        uses: ./.github/actions/verify-chatops-authorization
+        with:
+          commenter: ${{ github.event.comment.user.login }}
+          authorized-users: ${{ secrets.CHATOPS_AUTHORIZED_USERS }}
 
       - name: Resolve PR head branch and commit
         id: pr

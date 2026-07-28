@@ -1,5 +1,5 @@
 # Developer-experience targets for Kubernetes.EnvTest.
-# Windows users: scripts/make.ps1 provides the same targets.
+# Windows users: make.ps1 provides the same targets.
 
 SOLUTION      := Kubernetes.EnvTest.slnx
 CONFIGURATION ?= Release

@@ -6,8 +6,8 @@
     One of: build, test, test-integration, test-all, bench, format, format-check, pack, publish-tool, clean.
 
 .EXAMPLE
-    ./scripts/make.ps1 build
-    ./scripts/make.ps1 pack -Configuration Debug
+    ./make.ps1 build
+    ./make.ps1 pack -Configuration Debug
 #>
 [CmdletBinding()]
 param(
@@ -19,7 +19,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-Set-Location (Join-Path $PSScriptRoot '..')
+Set-Location $PSScriptRoot
 
 $solution = 'Kubernetes.EnvTest.slnx'
 $artifacts = 'artifacts'

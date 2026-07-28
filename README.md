@@ -12,11 +12,11 @@ ecosystem are reused by the other.
 
 ## Packages
 
-| Package | What it is |
-| --- | --- |
-| `Kubernetes.EnvTest` | The core library: `TestEnvironment` (the port of upstream's `Environment`), control plane management, CRD & webhook installation, certificates, users. |
-| `Kubernetes.EnvTest.Provisioning` | Binary provisioning: version resolution, download with SHA-512 verification, setup-envtest-compatible store. Used by the core library and the CLI. |
-| `Kubernetes.EnvTest.Tool` | The `setup-envtest` dotnet tool — a Native AOT CLI to pre-fetch and inspect control-plane binaries outside of test code (CI pre-warm, local dev). |
+| Package                           | What it is                                                                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Kubernetes.EnvTest`              | The core library: `TestEnvironment` (the port of upstream's `Environment`), control plane management, CRD & webhook installation, certificates, users. |
+| `Kubernetes.EnvTest.Provisioning` | Binary provisioning: version resolution, download with SHA-512 verification, setup-envtest-compatible store. Used by the core library and the CLI.     |
+| `Kubernetes.EnvTest.Tool`         | The `setup-envtest` dotnet tool — a Native AOT CLI to pre-fetch and inspect control-plane binaries outside of test code (CI pre-warm, local dev).      |
 
 ```sh
 dotnet add package Kubernetes.EnvTest
@@ -147,19 +147,19 @@ This library tracks `controller-runtime/pkg/envtest` behaviorally, not line by l
 
 Everything configurable on `TestEnvironment` (all optional):
 
-| Property | Purpose |
-| --- | --- |
-| `DownloadBinaryAssets` / `...Version` / `...IndexUrl` | Download control-plane binaries at start. |
-| `BinaryAssetsDirectory` | Where binaries live / are downloaded to. |
-| `CrdDirectoryPaths`, `Crds`, `CrdInstallOptions` | CRDs to install (files, directories, or objects). |
-| `WebhookInstallOptions` | Admission webhook configs + local serving cert generation. |
-| `CrdInstallOptions.ConversionWebhookTypes` | Group/kinds whose CRD conversion webhooks are patched to the local serving address (the .NET replacement for Go's scheme-based Hub/Spoke detection). |
-| `UseExistingCluster` | Skip the local control plane and use your current kubeconfig. |
-| `ControlPlaneStartTimeout` / `ControlPlaneStopTimeout` | Component start/stop deadlines. |
-| `AttachControlPlaneOutput` | Stream apiserver/etcd output to the console. |
-| `ControlPlane.GetApiServer().Configure()` | Add/override/remove any `kube-apiserver` flag (`ArgumentSet`). |
-| `ControlPlane.GetEtcd().Configure()` | Same for etcd. |
-| `LogTimings` | Include per-phase durations in log messages. |
+| Property                                               | Purpose                                                                                                                                              |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DownloadBinaryAssets` / `...Version` / `...IndexUrl`  | Download control-plane binaries at start.                                                                                                            |
+| `BinaryAssetsDirectory`                                | Where binaries live / are downloaded to.                                                                                                             |
+| `CrdDirectoryPaths`, `Crds`, `CrdInstallOptions`       | CRDs to install (files, directories, or objects).                                                                                                    |
+| `WebhookInstallOptions`                                | Admission webhook configs + local serving cert generation.                                                                                           |
+| `CrdInstallOptions.ConversionWebhookTypes`             | Group/kinds whose CRD conversion webhooks are patched to the local serving address (the .NET replacement for Go's scheme-based Hub/Spoke detection). |
+| `UseExistingCluster`                                   | Skip the local control plane and use your current kubeconfig.                                                                                        |
+| `ControlPlaneStartTimeout` / `ControlPlaneStopTimeout` | Component start/stop deadlines.                                                                                                                      |
+| `AttachControlPlaneOutput`                             | Stream apiserver/etcd output to the console.                                                                                                         |
+| `ControlPlane.GetApiServer().Configure()`              | Add/override/remove any `kube-apiserver` flag (`ArgumentSet`).                                                                                       |
+| `ControlPlane.GetEtcd().Configure()`                   | Same for etcd.                                                                                                                                       |
+| `LogTimings`                                           | Include per-phase durations in log messages.                                                                                                         |
 
 Environment variables honored for Go compatibility: `USE_EXISTING_CLUSTER`,
 `KUBEBUILDER_ASSETS`, `TEST_ASSET_*`, `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` /
@@ -184,7 +184,7 @@ services.AddEnvTestBinaryProvisioning(options => options.Version = "1.31");
 Uses `Microsoft.Extensions.Logging` (`ILogger<T>`) — no third-party logging dependency. Pass
 an `ILoggerFactory` to the `TestEnvironment` constructor. Log lines carry the environment
 instance id, phase (`StartingControlPlane`, `InstallingCRDs`, ...) and Kubernetes version both
-as scope values *and* in the message text, so output from concurrent environments stays
+as scope values _and_ in the message text, so output from concurrent environments stays
 attributable even without `IncludeScopes = true`.
 
 ## Errors
