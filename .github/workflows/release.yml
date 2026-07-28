@@ -1,0 +1,139 @@
+name: Release
+
+# Releases are cut from SemVer tags: vX.Y.Z, optionally with a -prerelease
+# and/or +buildmetadata suffix (e.g. v1.2.3, v1.2.3-rc.1, v1.2.3+build.5).
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate-tag:
+    name: Validate SemVer tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - name: Parse tag against the SemVer 2.0.0 grammar
+        id: parse
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          SEMVER_REGEX='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+          if [[ ! "$TAG" =~ $SEMVER_REGEX ]]; then
+            echo "::error::Tag '$TAG' is not a valid SemVer version tag (expected vX.Y.Z with optional -prerelease/+metadata)."
+            exit 1
+          fi
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Build & test
+    needs: validate-tag
+    uses: ./.github/workflows/build-test.yml
+
+  pack-libraries:
+    name: Pack libraries + tool manifest
+    needs: [validate-tag, test]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.validate-tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/dotnet-setup
+
+      - name: Pack libraries
+        uses: ./.github/actions/pack-libraries
+        with:
+          version: ${{ env.VERSION }}
+
+      - name: Pack Kubernetes.EnvTest.Tool manifest package
+        # Packing without a RuntimeIdentifier produces the top-level tool
+        # manifest plus throwaway RID packages; only the manifest is kept —
+        # the real RID packages are Native-AOT-built on matching runners in
+        # the pack-tool job below.
+        run: |
+          dotnet pack src/Kubernetes.EnvTest.Tool -c Release -o tool-manifest "-p:Version=$VERSION"
+          mkdir -p artifacts
+          cp "tool-manifest/Kubernetes.EnvTest.Tool.$VERSION.nupkg" artifacts/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages-libraries
+          path: artifacts/*.nupkg
+
+  pack-tool:
+    name: Pack setup-envtest (${{ matrix.rid }})
+    needs: [validate-tag, test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # One runner per RID — Native AOT cannot reliably be cross-compiled.
+        # Keep this list in sync with <RuntimeIdentifiers> in
+        # src/Kubernetes.EnvTest.Tool/Kubernetes.EnvTest.Tool.csproj.
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: linux-arm64
+            os: ubuntu-24.04-arm
+          - rid: win-x64
+            os: windows-latest
+          - rid: win-arm64
+            os: windows-11-arm
+          - rid: osx-x64
+            os: macos-15-intel
+          - rid: osx-arm64
+            os: macos-latest
+    env:
+      VERSION: ${{ needs.validate-tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/dotnet-setup
+
+      - name: Pack Native AOT tool package
+        run: dotnet pack src/Kubernetes.EnvTest.Tool -c Release -r ${{ matrix.rid }} -o artifacts "-p:Version=${{ env.VERSION }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages-tool-${{ matrix.rid }}
+          path: artifacts/*.nupkg
+
+  publish:
+    name: Publish to NuGet & create GitHub release
+    needs: [validate-tag, pack-libraries, pack-tool]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.validate-tag.outputs.version }}
+    steps:
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: packages
+
+      - name: Push packages to NuGet
+        run: |
+          dotnet nuget push "packages/*.nupkg" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          gh release create "${{ github.ref_name }}" packages/*.nupkg \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            $PRERELEASE_FLAG

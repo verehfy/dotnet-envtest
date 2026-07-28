@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Kubernetes.EnvTest.Tool</RootNamespace>
+    <AssemblyName>setup-envtest</AssemblyName>
+    <Description>Companion CLI for Kubernetes.EnvTest: pre-fetch and inspect the Kubernetes control-plane binaries (kube-apiserver, etcd, kubectl) used by envtest, sharing the setup-envtest on-disk store.</Description>
+    <PackageTags>kubernetes;envtest;setup-envtest;dotnet-tool;cli</PackageTags>
+
+    <!-- dotnet tool packaging. Packing with a RuntimeIdentifier produces a
+         platform-specific Native AOT tool package (.NET 10 feature); packing
+         without one produces the framework-dependent fallback package. -->
+    <PackAsTool>true</PackAsTool>
+    <PackageId>Kubernetes.EnvTest.Tool</PackageId>
+    <ToolCommandName>setup-envtest</ToolCommandName>
+    <!-- The RIDs listed here become the platforms the published tool manifest
+         package resolves to; packing without a RuntimeIdentifier produces that
+         manifest, and each RID package is packed on a matching runner in the
+         release workflow (Native AOT cannot reliably cross-compile).
+         IMPORTANT: keep this list in sync with the active matrix entries in
+         .github/workflows/release.yml. -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
+    <!-- Surface trim/AOT warnings from dependencies at publish time in CI. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <OptimizationPreference>Size</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Kubernetes.EnvTest.Provisioning/Kubernetes.EnvTest.Provisioning.csproj" />
+  </ItemGroup>
+
+</Project>

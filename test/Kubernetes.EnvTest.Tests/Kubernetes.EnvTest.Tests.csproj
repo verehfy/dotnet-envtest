@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Kubernetes.EnvTest.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Kubernetes.EnvTest/Kubernetes.EnvTest.csproj" />
+    <ProjectReference Include="../../src/Kubernetes.EnvTest.Provisioning/Kubernetes.EnvTest.Provisioning.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Kubernetes.EnvTest.AppHost</RootNamespace>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>kubernetes-envtest-apphost</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Kubernetes.EnvTest/Kubernetes.EnvTest.csproj" IsAspireProjectResource="false" />
+    <ProjectReference Include="../Kubernetes.EnvTest.SampleWorker/Kubernetes.EnvTest.SampleWorker.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="TestData/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

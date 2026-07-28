@@ -1,0 +1,33 @@
+name: Build & Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    name: Build, format check & test
+    uses: ./.github/workflows/build-test.yml
+    with:
+      run-format-check: true
+      run-integration-tests: true
+
+  aot-smoke:
+    # Publishes the CLI with Native AOT for this runner's RID only, surfacing
+    # trim/AOT analysis warnings (e.g. from System.CommandLine or YamlDotNet)
+    # on every PR rather than at release time. PR builds never cross-compile
+    # the full RID matrix; that lives in release.yml.
+    name: Native AOT publish smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: ./.github/actions/dotnet-setup
+
+      - name: Publish setup-envtest (Native AOT, current RID)
+        run: dotnet publish src/Kubernetes.EnvTest.Tool -c Release -r linux-x64
+
+      - name: Run the published binary
+        run: ./src/Kubernetes.EnvTest.Tool/bin/Release/net10.0/linux-x64/publish/setup-envtest --help

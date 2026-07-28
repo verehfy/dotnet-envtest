@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Kubernetes.EnvTest.Benchmarks</RootNamespace>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Kubernetes.EnvTest/Kubernetes.EnvTest.csproj" />
+    <ProjectReference Include="../../src/Kubernetes.EnvTest.Provisioning/Kubernetes.EnvTest.Provisioning.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kubernetes.EnvTest.Provisioning/Kubernetes.EnvTest.Provisioning.csproj" />
+    <Project Path="src/Kubernetes.EnvTest.Tool/Kubernetes.EnvTest.Tool.csproj" />
+    <Project Path="src/Kubernetes.EnvTest/Kubernetes.EnvTest.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Kubernetes.EnvTest.AppHost/Kubernetes.EnvTest.AppHost.csproj" />
+    <Project Path="test/Kubernetes.EnvTest.Benchmarks/Kubernetes.EnvTest.Benchmarks.csproj" />
+    <Project Path="test/Kubernetes.EnvTest.IntegrationTests/Kubernetes.EnvTest.IntegrationTests.csproj" />
+    <Project Path="test/Kubernetes.EnvTest.SampleWorker/Kubernetes.EnvTest.SampleWorker.csproj" />
+    <Project Path="test/Kubernetes.EnvTest.Tests/Kubernetes.EnvTest.Tests.csproj" />
+  </Folder>
+</Solution>
